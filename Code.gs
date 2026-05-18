@@ -202,6 +202,7 @@ function _doSingle(req) {
   try {
     var opts = _buildOpts(req);
     var resp = UrlFetchApp.fetch(req.u, opts);
+
     return _json({
       s: resp.getResponseCode(),
       h: _respHeaders(resp),

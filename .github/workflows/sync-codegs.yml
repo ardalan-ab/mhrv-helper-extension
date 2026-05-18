@@ -10,15 +10,17 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  bundled-matches-upstream-main:
-    name: bundled Code.gs matches upstream main
+  sync-upstream-codegs:
+    name: sync Code.gs with upstream main
     runs-on: ubuntu-latest
     steps:
       - name: Check out extension repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - name: Fetch canonical Code.gs from main project (main branch)
         run: |
@@ -26,7 +28,33 @@ jobs:
             'https://raw.githubusercontent.com/therealaleph/MasterHttpRelayVPN-RUST/main/assets/apps_script/Code.gs' \
             -o /tmp/upstream-Code.gs
 
+      - name: Rewrite bundled Code.gs if out of sync
+        if: github.event_name != 'pull_request'
+        run: |
+          if cmp -s Code.gs /tmp/upstream-Code.gs; then
+            echo "OK: bundled Code.gs already matches upstream main."
+            exit 0
+          fi
+
+          echo "Bundled Code.gs differs from upstream main; rewriting from upstream."
+          cp /tmp/upstream-Code.gs Code.gs
+
+      - name: Commit synced Code.gs
+        if: github.event_name != 'pull_request'
+        run: |
+          if git diff --quiet -- Code.gs; then
+            echo "No Code.gs sync commit needed."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Code.gs
+          git commit -m "Sync Code.gs with upstream"
+          git push
+
       - name: Compare with bundled Code.gs
+        if: github.event_name == 'pull_request'
         run: |
           if ! cmp -s Code.gs /tmp/upstream-Code.gs; then
             echo "::error::Bundled Code.gs differs from therealaleph/MasterHttpRelayVPN-RUST main (assets/apps_script/Code.gs). Copy the upstream file into this repo and commit."
