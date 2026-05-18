@@ -2,9 +2,23 @@
   "name": "mhrv-helper-extension-tests",
   "private": true,
   "scripts": {
-    "test:smoke": "playwright test --config=playwright.config.js"
+    "test:smoke": "playwright test --config=playwright.config.js",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "@playwright/test": "latest"
+    "@playwright/test": "latest",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.5",
+    "prettier": "^3.8.3"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write",
+      "test:smoke"
+    ],
+    "*.{json,md,css}": [
+      "prettier --write"
+    ]
   }
 }
